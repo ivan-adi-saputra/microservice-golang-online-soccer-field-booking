@@ -1,6 +1,7 @@
 package util
 
 import (
+	"os"
 	"reflect"
 	"strconv"
 
@@ -31,7 +32,7 @@ func SetEnvFromConsulKV(v *viper.Viper) error {
 	env := make(map[string]string)
 
 	if err := v.Unmarshal(&env); err != nil {
-		logrus.Errorf("failed to unmarshal environment")
+		logrus.Errorf("failed to unmarshal environment: %v", err)
 		return err
 	}
 
@@ -57,6 +58,37 @@ func SetEnvFromConsulKV(v *viper.Viper) error {
 		default:
 			panic("unsupported type")
 		}
+
+		if err := os.Setenv(k, val); err != nil {
+			logrus.Errorf("failed to set environment variable: %v", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func BindFromConsul(dest any, endPoint string, path string) error {
+	v := viper.New()
+	v.SetConfigType("json")
+	if err := v.AddRemoteProvider("consul", endPoint, path); err != nil {
+		logrus.Errorf("failed to add consul provider: %v", err)
+		return err
+	}
+
+	if err := v.ReadRemoteConfig(); err != nil {
+		logrus.Errorf("failed to read consul config: %v", err)
+		return err
+	}
+
+	if err := v.Unmarshal(&dest); err != nil {
+		logrus.Errorf("failed to unmarshal: %v", err)
+		return err
+	}
+
+	if err := SetEnvFromConsulKV(v); err != nil {
+		logrus.Errorf("failed to set environment variables from consul: %v", err)
+		return err
 	}
 
 	return nil
