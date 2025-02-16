@@ -9,11 +9,11 @@ type registry struct {
 	repository repositories.RepositoryRegistry
 }
 
-type Registry interface {
+type ServiceRegistry interface {
 	GetUser() services.UserService
 }
 
-func NewServiceRegistry(repository repositories.RepositoryRegistry) Registry {
+func NewServiceRegistry(repository repositories.RepositoryRegistry) ServiceRegistry {
 	return &registry{repository: repository}
 }
 
